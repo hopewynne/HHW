@@ -110,12 +110,20 @@ def pull_sales_and_traffic(conn):
     end = (date.today() - timedelta(days=1)).isoformat()  # yesterday
 
     print(f"Requesting Sales & Traffic report for {start} to {end}...")
-    create_resp = reports_api.create_report(
-        reportType=ReportType.GET_SALES_AND_TRAFFIC_REPORT,
-        dataStartTime=start,
-        dataEndTime=end,
-        reportOptions={"asinGranularity": "CHILD"},
-    )
+    try:
+        create_resp = reports_api.create_report(
+            reportType=ReportType.GET_SALES_AND_TRAFFIC_REPORT,
+            dataStartTime=start,
+            dataEndTime=end,
+            reportOptions={"asinGranularity": "CHILD"},
+        )
+    except Exception as e:
+        headers = getattr(e, "headers", None)
+        if headers:
+            print(f"x-amzn-RequestId: {headers.get('x-amzn-RequestId')}")
+            print(f"x-amzn-ErrorType: {headers.get('x-amzn-ErrorType')}")
+            print(f"Full headers: {dict(headers)}")
+        raise
     report_id = create_resp.payload["reportId"]
 
     # Poll until the report is ready
